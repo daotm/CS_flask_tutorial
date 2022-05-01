@@ -3,31 +3,16 @@ import secrets
 from PIL import Image
 from flask import render_template, url_for, flash, redirect, request
 from flashblog import app, db, bcrypt
-from flashblog.forms import RegistrationForm, LoginForm, UpdateAccountForm
+from flashblog.forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm
 from flashblog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
-
-posts = [
-    {
-        'author': 'Triet Dao',
-        'title': 'Post 1',
-        'content': 'First post',
-        'date_post': 'April 22, 2022'
-    },
-    {
-        'author': 'Tom Schafer',
-        'title': 'Post 2',
-        'content': 'Second post',
-        'date_post': 'April 25, 2018'
-    },
-]
-    
 
 
 
 @app.route("/")
 @app.route("/home")
 def home():
+    posts = Post.query.all()
     return render_template('home.html', posts=posts)
 
 
@@ -106,3 +91,17 @@ def account():
     image_file = url_for('static', filename='profile_pics/' + current_user.image_file)
     return render_template('account.html', title='Account', image_file=image_file, form=form)
     
+
+@app.route("/post/new", methods=['GET','POST'])
+@login_required
+def new_post():
+    form = PostForm()
+    if form.validate_on_submit():
+        flash(f'Your post has been created!', 'success')
+        post = Post(title=form.title.data, content=form.content.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        return redirect(url_for('home'))
+    return render_template('create_post.html', form = form)
+
+
